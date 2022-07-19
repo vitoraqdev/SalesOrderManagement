@@ -5,11 +5,10 @@
 pub mod schema;
 mod libs;
 
-use diesel::{Connection, PgConnection};
-use diesel::prelude::*;
-use rocket::form::Form;
 // use schema::neighborhood;
-
+use libs::neighborhood::*;
+use libs::address::*;
+use libs::item::*;
 
 pub(crate) static DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432";
 
@@ -17,10 +16,9 @@ pub(crate) static DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
-        .mount("/", routes![libs::neighborhood::get_neighborhood_wrapper,
-            libs::neighborhood::create_neighborhood])
-        .mount("/", routes![libs::address::get_address_wrapper,
-            libs::address::create_address])
+        .mount("/", routes![get_neighborhood_wrapper, create_neighborhood])
+        .mount("/", routes![get_address_wrapper, create_address])
+        .mount("/", routes![get_item_wrapper, create_item])
         .launch()
         .await?;
 
