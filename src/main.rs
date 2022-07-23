@@ -10,6 +10,7 @@ use libs::neighborhood::*;
 use libs::address::*;
 use libs::item::*;
 use libs::motoboy::*;
+use libs::order_details::*;
 
 pub(crate) static DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432";
 
@@ -21,6 +22,7 @@ async fn main() -> Result<(), rocket::Error> {
         .mount("/", routes![get_address_wrapper, create_address])
         .mount("/", routes![get_item_wrapper, create_item])
         .mount("/", routes![get_motoboy_wrapper, create_motoboy])
+        .mount("/", routes![get_order_details_wrapper, create_order_details])
         .launch()
         .await?;
 
