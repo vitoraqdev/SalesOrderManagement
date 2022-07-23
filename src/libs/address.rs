@@ -48,6 +48,13 @@ fn get_address(conn: &PgConnection, address_id: i32) -> Option<Address> {
         .unwrap()
 }
 
+pub fn get_addresses(conn: &PgConnection, addresses_id: Vec<i32>) -> Vec<Address> {
+    address::table
+        .filter(address::id.eq_any(addresses_id))
+        .load::<Address>(conn)
+        .unwrap()
+}
+
 #[post("/address", data = "<address>")]
 pub fn create_address(mut address: Form<NewAddress>) -> String {
     let conn = PgConnection::establish(DATABASE_URL)
