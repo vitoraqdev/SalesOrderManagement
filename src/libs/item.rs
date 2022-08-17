@@ -1,6 +1,7 @@
 use super::super::schema::item;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
+use rocket::response::status;
 use crate::DATABASE_URL;
 
 
@@ -41,6 +42,26 @@ pub fn get_item(conn: &PgConnection, item_id: i32) -> Option<Item> {
     item::table
         .find(item_id)
         .first::<Item>(conn)
+        .optional()
+        .unwrap()
+}
+
+#[get("/item")]
+pub fn get_all_items() -> Result<String, status::NotFound<String>> {
+    let conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let items = _get_all_items(&conn);
+
+    match items {
+        Some(items) => Ok(format!("{:?}", items)),
+        None => Err(status::NotFound("Items not found".to_string())),
+    }
+}
+
+fn _get_all_items(conn: &PgConnection) -> Option<Vec<Item>> {
+    item::table
+        .load::<Item>(conn)
         .optional()
         .unwrap()
 }
