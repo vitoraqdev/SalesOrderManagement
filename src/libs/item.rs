@@ -49,14 +49,14 @@ pub fn get_item(conn: &PgConnection, item_id: i32) -> Option<Item> {
 }
 
 #[get("/item")]
-pub fn get_all_items() -> Result<String, status::NotFound<String>> {
+pub fn get_all_items() -> Result<Json<Vec<Item>>, status::NotFound<String>> {
     let conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let items = _get_all_items(&conn);
 
     match items {
-        Some(items) => Ok(format!("{:?}", items)),
+        Some(items) => Ok(Json(items)),
         None => Err(status::NotFound("Items not found".to_string())),
     }
 }
