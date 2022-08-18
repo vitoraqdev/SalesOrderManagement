@@ -80,3 +80,27 @@ pub fn create_item(item: Form<NewItem>) -> String {
 
     format!("{:?}", item)
 }
+
+#[delete("/item/<item_id>")]
+pub fn delete_item(item_id: i32) -> Result<String, status::NotFound<String>> {
+    let conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let result = _delete_item(&conn, item_id);
+
+    match result {
+        Ok(is_deleted) => {
+            if is_deleted == 1 {
+                Ok("Item deleted.".to_string())
+            } else {
+                Err(status::NotFound("Item not found.".to_string()))
+            }
+        }
+        Err(e) => Err(status::NotFound(format!("Error deleting item: {}", e))),
+    }
+}
+
+fn _delete_item(conn: &PgConnection, item_id: i32) -> QueryResult<usize> {
+    diesel::delete(item::table.find(item_id))
+        .execute(conn)
+}
