@@ -3,9 +3,11 @@ use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
 use rocket::response::status;
 use crate::DATABASE_URL;
+use serde::Serialize;
+use rocket::serde::json::Json;
 
 
-#[derive(Debug, Queryable)]
+#[derive(Debug, Queryable, Serialize)]
 pub struct Item {
     pub id: i32,
     pub name: String,
@@ -26,15 +28,15 @@ pub struct NewItem {
 
 
 #[get("/item/<item_id>")]
-pub fn get_item_wrapper(item_id: i32) -> String {
+pub fn get_item_wrapper(item_id: i32) -> Result<Json<Item>, status::NotFound<String>> {
     let conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let item = get_item(&conn, item_id);
 
     match item {
-        Some(item) => format!("{:?}", item),
-        None => "Item not found".to_string(),
+        Some(item) => Ok(Json(item)),
+        None => Err(status::NotFound("Item not found".to_string())),
     }
 }
 
