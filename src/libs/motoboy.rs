@@ -1,4 +1,4 @@
-use super::super::schema::motoboy;
+use crate::schema::motoboy;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
 use crate::DATABASE_URL;
@@ -18,7 +18,7 @@ pub struct Motoboy {
 
 
 #[derive(Debug, AsChangeset, Insertable, FromForm)]
-#[table_name="motoboy"]
+#[diesel(table_name = motoboy)]
 pub struct NewMotoboy {
     pub name: String,
     pub phone: String,
@@ -28,10 +28,10 @@ pub struct NewMotoboy {
 
 #[get("/motoboy/<motoboy_id>")]
 pub fn get_motoboy(motoboy_id: i32) -> Result<Json<Motoboy>, status::NotFound<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let motoboy = _get_motoboy(&conn, motoboy_id);
+    let motoboy = _get_motoboy(&mut conn, motoboy_id);
 
     match motoboy {
         Some(motoboy) => Ok(Json(motoboy)),
@@ -39,7 +39,7 @@ pub fn get_motoboy(motoboy_id: i32) -> Result<Json<Motoboy>, status::NotFound<St
     }
 }
 
-pub fn _get_motoboy(conn: &PgConnection, motoboy_id: i32) -> Option<Motoboy> {
+pub fn _get_motoboy(conn: &mut PgConnection, motoboy_id: i32) -> Option<Motoboy> {
     motoboy::table
         .find(motoboy_id)
         .first::<Motoboy>(conn)
@@ -49,10 +49,10 @@ pub fn _get_motoboy(conn: &PgConnection, motoboy_id: i32) -> Option<Motoboy> {
 
 #[post("/motoboy", data = "<motoboy>")]
 pub fn create_motoboy(motoboy: Form<NewMotoboy>) -> Result<Json<Motoboy>, status::BadRequest<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let motoboy = _create_motoboy(&conn, motoboy.into_inner());
+    let motoboy = _create_motoboy(&mut conn, motoboy.into_inner());
 
     match motoboy {
         Ok(motoboy) => Ok(Json(motoboy)),
@@ -60,7 +60,7 @@ pub fn create_motoboy(motoboy: Form<NewMotoboy>) -> Result<Json<Motoboy>, status
     }
 }
 
-fn _create_motoboy(conn: &PgConnection, motoboy: NewMotoboy) -> QueryResult<Motoboy> {
+fn _create_motoboy(conn: &mut PgConnection, motoboy: NewMotoboy) -> QueryResult<Motoboy> {
     diesel::insert_into(motoboy::table)
         .values(motoboy)
         .get_result::<Motoboy>(conn)
@@ -68,10 +68,10 @@ fn _create_motoboy(conn: &PgConnection, motoboy: NewMotoboy) -> QueryResult<Moto
 
 #[put("/motoboy/<motoboy_id>", data = "<motoboy>")]
 pub fn update_motoboy(motoboy_id: i32, motoboy: Form<NewMotoboy>) -> Result<Json<Motoboy>, status::BadRequest<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let motoboy = _update_motoboy(&conn, motoboy_id, motoboy.into_inner());
+    let motoboy = _update_motoboy(&mut conn, motoboy_id, motoboy.into_inner());
 
     match motoboy {
         Ok(motoboy) => Ok(Json(motoboy)),
@@ -79,7 +79,7 @@ pub fn update_motoboy(motoboy_id: i32, motoboy: Form<NewMotoboy>) -> Result<Json
     }
 }
 
-fn _update_motoboy(conn: &PgConnection, motoboy_id: i32, motoboy: NewMotoboy) -> QueryResult<Motoboy> {
+fn _update_motoboy(conn: &mut PgConnection, motoboy_id: i32, motoboy: NewMotoboy) -> QueryResult<Motoboy> {
     diesel::update(motoboy::table.find(motoboy_id))
         .set(motoboy)
         .get_result::<Motoboy>(conn)
@@ -87,10 +87,10 @@ fn _update_motoboy(conn: &PgConnection, motoboy_id: i32, motoboy: NewMotoboy) ->
 
 #[delete("/motoboy/<motoboy_id>")]
 pub fn delete_motoboy(motoboy_id: i32) -> Result<Json<Motoboy>, status::BadRequest<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let motoboy = _delete_motoboy(&conn, motoboy_id);
+    let motoboy = _delete_motoboy(&mut conn, motoboy_id);
 
     match motoboy {
         Ok(motoboy) => Ok(Json(motoboy)),
@@ -98,22 +98,22 @@ pub fn delete_motoboy(motoboy_id: i32) -> Result<Json<Motoboy>, status::BadReque
     }
 }
 
-fn _delete_motoboy(conn: &PgConnection, motoboy_id: i32) -> QueryResult<Motoboy> {
+fn _delete_motoboy(conn: &mut PgConnection, motoboy_id: i32) -> QueryResult<Motoboy> {
     diesel::delete(motoboy::table.find(motoboy_id))
         .get_result::<Motoboy>(conn)
 }
 
 #[get("/motoboy")]
 pub fn get_motoboys() -> Json<Vec<Motoboy>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let motoboys = _get_motoboys(&conn);
+    let motoboys = _get_motoboys(&mut conn);
 
     Json(motoboys)
 }
 
-fn _get_motoboys(conn: &PgConnection) -> Vec<Motoboy> {
+fn _get_motoboys(conn: &mut PgConnection) -> Vec<Motoboy> {
     motoboy::table
         .load::<Motoboy>(conn)
         .unwrap()

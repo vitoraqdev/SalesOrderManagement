@@ -1,4 +1,4 @@
-use super::super::schema::item;
+use crate::schema::item;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
 use rocket::response::status;
@@ -18,7 +18,7 @@ pub struct Item {
 
 
 #[derive(Debug, Insertable, FromForm)]
-#[table_name = "item"]
+#[diesel(table_name = item)]
 pub struct NewItem {
     pub name: String,
     pub price: f64,
@@ -29,10 +29,10 @@ pub struct NewItem {
 
 #[get("/item/<item_id>")]
 pub fn get_item_wrapper(item_id: i32) -> Result<Json<Item>, status::NotFound<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let item = get_item(&conn, item_id);
+    let item = get_item(&mut conn, item_id);
 
     match item {
         Some(item) => Ok(Json(item)),
@@ -40,7 +40,7 @@ pub fn get_item_wrapper(item_id: i32) -> Result<Json<Item>, status::NotFound<Str
     }
 }
 
-pub fn get_item(conn: &PgConnection, item_id: i32) -> Option<Item> {
+pub fn get_item(conn: &mut PgConnection, item_id: i32) -> Option<Item> {
     item::table
         .find(item_id)
         .first::<Item>(conn)
@@ -50,10 +50,10 @@ pub fn get_item(conn: &PgConnection, item_id: i32) -> Option<Item> {
 
 #[get("/item")]
 pub fn get_all_items() -> Result<Json<Vec<Item>>, status::NotFound<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let items = _get_all_items(&conn);
+    let items = _get_all_items(&mut conn);
 
     match items {
         Some(items) => Ok(Json(items)),
@@ -61,7 +61,7 @@ pub fn get_all_items() -> Result<Json<Vec<Item>>, status::NotFound<String>> {
     }
 }
 
-fn _get_all_items(conn: &PgConnection) -> Option<Vec<Item>> {
+fn _get_all_items(conn: &mut PgConnection) -> Option<Vec<Item>> {
     item::table
         .load::<Item>(conn)
         .optional()
@@ -70,12 +70,12 @@ fn _get_all_items(conn: &PgConnection) -> Option<Vec<Item>> {
 
 #[post("/item", data = "<item>")]
 pub fn create_item(item: Form<NewItem>) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let item = diesel::insert_into(item::table)
         .values(item.into_inner())
-        .get_result::<Item>(&conn)
+        .get_result::<Item>(&mut conn)
         .expect("Error creating item");
 
     format!("{:?}", item)
@@ -83,10 +83,10 @@ pub fn create_item(item: Form<NewItem>) -> String {
 
 #[delete("/item/<item_id>")]
 pub fn delete_item(item_id: i32) -> Result<String, status::NotFound<String>> {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let result = _delete_item(&conn, item_id);
+    let result = _delete_item(&mut conn, item_id);
 
     match result {
         Ok(is_deleted) => {
@@ -100,7 +100,7 @@ pub fn delete_item(item_id: i32) -> Result<String, status::NotFound<String>> {
     }
 }
 
-fn _delete_item(conn: &PgConnection, item_id: i32) -> QueryResult<usize> {
+fn _delete_item(conn: &mut PgConnection, item_id: i32) -> QueryResult<usize> {
     diesel::delete(item::table.find(item_id))
         .execute(conn)
 }
