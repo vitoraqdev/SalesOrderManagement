@@ -13,6 +13,7 @@ use libs::motoboy::*;
 use libs::order_details::*;
 use libs::customer_address::*;
 use libs::customer::*;
+use libs::customer_order::*;
 
 pub(crate) static DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432/salesordermanagement";
 
