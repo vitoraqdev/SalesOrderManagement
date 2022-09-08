@@ -21,7 +21,7 @@ pub struct Address {
 }
 
 #[derive(Debug, AsChangeset, Insertable, FromForm)]
-#[table_name="address"]
+#[diesel(table_name = address)]
 pub struct NewAddress {
     pub street: String,
     pub number: String,
