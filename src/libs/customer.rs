@@ -1,4 +1,4 @@
-use super::super::schema::customer;
+use crate::schema::customer;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
 use crate::DATABASE_URL;
@@ -14,7 +14,7 @@ pub struct Customer {
 
 
 #[derive(Insertable, FromForm)]
-#[table_name="customer"]
+#[diesel(table_name = customer)]
 pub struct NewCustomer {
     pub name: String,
     pub phone: Option<String>,
@@ -24,10 +24,10 @@ pub struct NewCustomer {
 
 #[get("/customer/<customer_id>")]
 pub fn get_customer_wrapper(customer_id: i32) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let customer = get_customer(&conn, customer_id);
+    let customer = get_customer(&mut conn, customer_id);
 
     match customer {
         Some(customer) => format!("{:?}", customer),
@@ -35,7 +35,7 @@ pub fn get_customer_wrapper(customer_id: i32) -> String {
     }
 }
 
-fn get_customer(conn: &PgConnection, customer_id: i32) -> Option<Customer> {
+fn get_customer(conn: &mut PgConnection, customer_id: i32) -> Option<Customer> {
     customer::table
         .find(customer_id)
         .first::<Customer>(conn)
@@ -45,12 +45,12 @@ fn get_customer(conn: &PgConnection, customer_id: i32) -> Option<Customer> {
 
 #[post("/customer", data = "<customer>")]
 pub fn create_customer(customer: Form<NewCustomer>) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let customer = diesel::insert_into(customer::table)
         .values(customer.into_inner())
-        .get_result::<Customer>(&conn);
+        .get_result::<Customer>(&mut conn);
 
     match customer {
         Ok(customer) => format!("{:?}", customer),

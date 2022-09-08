@@ -15,7 +15,7 @@ pub struct OrderDetails {
 
 
 #[derive(Debug, Insertable, FromForm)]
-#[table_name="order_details"]
+#[diesel(table_name = order_details)]
 pub struct NewOrderDetails {
     pub order_id: i32,
     pub item_id: i32,
@@ -25,10 +25,10 @@ pub struct NewOrderDetails {
 
 #[get("/order_details/<order_id>")]
 pub fn get_order_details_wrapper(order_id: i32) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let order_details = get_order_details(&conn, order_id);
+    let order_details = get_order_details(&mut conn, order_id);
 
     match order_details {
         Some(order_details) => format!("{:?}", order_details),
@@ -36,7 +36,7 @@ pub fn get_order_details_wrapper(order_id: i32) -> String {
     }
 }
 
-pub fn get_order_details(conn: &PgConnection, order_id: i32) -> Option<OrderDetails> {
+pub fn get_order_details(conn: &mut PgConnection, order_id: i32) -> Option<OrderDetails> {
     order_details::table
         .filter(order_details::order_id.eq(order_id))
         .first::<OrderDetails>(conn)
@@ -46,12 +46,12 @@ pub fn get_order_details(conn: &PgConnection, order_id: i32) -> Option<OrderDeta
 
 #[post("/order_details", data = "<order_details>")]
 pub fn create_order_details(order_details: Form<NewOrderDetails>) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let order_details = diesel::insert_into(order_details::table)
         .values(order_details.into_inner())
-        .get_result::<OrderDetails>(&conn)
+        .get_result::<OrderDetails>(&mut conn)
         .expect("Error creating order details");
 
     format!("{:?}", order_details)

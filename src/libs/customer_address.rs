@@ -15,16 +15,16 @@ pub struct CustomerAddress {
 
 
 #[get("/customer_address/<customer_id>")]
-pub fn get_customer_addresses_wrapper(customer_id: i32) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+pub fn get_customer_addresses(customer_id: i32) -> String {
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let addresses = get_customer_addresses(&conn, customer_id);
+    let addresses = get_customer_addresses(&mut conn, customer_id);
 
     format!("{:?}", addresses)
 }
 
-fn get_customer_addresses(conn: &PgConnection, customer_id: i32) -> Vec<Address> {
+fn _get_customer_addresses(conn: &mut PgConnection, customer_id: i32) -> Vec<Address> {
     let customer_addresses_id = customer_address::table
         .filter(customer_address::customer_id.eq(&customer_id))
         .load::<CustomerAddress>(conn)
@@ -40,12 +40,12 @@ fn get_customer_addresses(conn: &PgConnection, customer_id: i32) -> Vec<Address>
 
 #[post("/customer_address", data = "<customer_address>")]
 pub fn create_customer_address(customer_address: Form<CustomerAddress>) -> String {
-    let conn = PgConnection::establish(DATABASE_URL)
+    let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let new_customer_address = diesel::insert_into(customer_address::table)
         .values(customer_address.into_inner())
-        .get_result::<CustomerAddress>(&conn);
+        .get_result::<CustomerAddress>(&mut conn);
 
     match new_customer_address {
         Ok(customer_address) => format!("{:?}", customer_address),
