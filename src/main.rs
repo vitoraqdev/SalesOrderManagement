@@ -27,6 +27,7 @@ async fn main() -> Result<(), rocket::Error> {
         .mount("/", routes![get_order_details_wrapper, create_order_details])
         .mount("/", routes![get_customer_addresses_wrapper, create_customer_address])
         .mount("/", routes![get_customer_wrapper, create_customer])
+        .mount("/", routes![get_order, get_orders, create_order, update_order, delete_order])
         .launch()
         .await?;
 
