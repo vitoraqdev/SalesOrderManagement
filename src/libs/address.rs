@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use rocket::serde::json::Json;
 use rocket::form::{Form, FromForm};
 use crate::DATABASE_URL;
-use crate::libs::neighborhood::get_neighborhood;
+use crate::libs::neighborhood::_get_neighborhood;
 use rocket::response::status;
 use serde::Serialize;
 
@@ -75,7 +75,7 @@ pub fn create_address(mut address: Form<NewAddress>) -> Result<Json<Address>, st
     // let mut address = address.clone();
     if address.delivery_fee.is_none() {
         // Set delivery_fee to neighborhood default value
-        address.delivery_fee = Some(get_neighborhood(&mut conn, address.neighborhood_id)
+        address.delivery_fee = Some(_get_neighborhood(&mut conn, address.neighborhood_id)
             .unwrap()
             .delivery_fee);
     }
@@ -102,7 +102,7 @@ pub fn update_address(address_id: i32, mut address: Form<NewAddress>) -> String 
     // let mut address = address.clone();
     if address.delivery_fee.is_none() {
         // Set delivery_fee to neighborhood default value
-        address.delivery_fee = Some(get_neighborhood(&mut conn, address.neighborhood_id)
+        address.delivery_fee = Some(_get_neighborhood(&mut conn, address.neighborhood_id)
             .unwrap()
             .delivery_fee);
     }

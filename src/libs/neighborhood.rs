@@ -21,11 +21,11 @@ pub struct NewNeighborhood {
 
 
 #[get("/address/neighborhood/<neighborhood_id>")]
-pub fn get_neighborhood_wrapper(neighborhood_id: i32) -> String {
+pub fn get_neighborhood(neighborhood_id: i32) -> String {
     let mut conn = PgConnection::establish(&DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let neighborhood = get_neighborhood(&mut conn, neighborhood_id);
+    let neighborhood = _get_neighborhood(&mut conn, neighborhood_id);
 
     match neighborhood {
         Some(neighborhood) => format!("{:?}", neighborhood),
@@ -33,7 +33,7 @@ pub fn get_neighborhood_wrapper(neighborhood_id: i32) -> String {
     }
 }
 
-pub fn get_neighborhood(conn: &mut PgConnection, neighborhood_id: i32) -> Option<Neighborhood> {
+pub fn _get_neighborhood(conn: &mut PgConnection, neighborhood_id: i32) -> Option<Neighborhood> {
     neighborhood::table
         .filter(neighborhood::id.eq(neighborhood_id))
         .first::<Neighborhood>(conn)

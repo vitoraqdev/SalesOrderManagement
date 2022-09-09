@@ -28,11 +28,11 @@ pub struct NewItem {
 
 
 #[get("/item/<item_id>")]
-pub fn get_item_wrapper(item_id: i32) -> Result<Json<Item>, status::NotFound<String>> {
+pub fn get_item(item_id: i32) -> Result<Json<Item>, status::NotFound<String>> {
     let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let item = get_item(&mut conn, item_id);
+    let item = _get_item(&mut conn, item_id);
 
     match item {
         Some(item) => Ok(Json(item)),
@@ -40,7 +40,7 @@ pub fn get_item_wrapper(item_id: i32) -> Result<Json<Item>, status::NotFound<Str
     }
 }
 
-pub fn get_item(conn: &mut PgConnection, item_id: i32) -> Option<Item> {
+pub fn _get_item(conn: &mut PgConnection, item_id: i32) -> Option<Item> {
     item::table
         .find(item_id)
         .first::<Item>(conn)
