@@ -3,13 +3,13 @@
 
 pub mod schema;
 pub mod libs;
-mod postgres;
+mod mount;
 
 pub(crate) static DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432/salesordermanagement";
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-    let _rocket = postgres::rocket()
+    let _rocket = mount::rocket()
         .launch()
         .await?;
 
