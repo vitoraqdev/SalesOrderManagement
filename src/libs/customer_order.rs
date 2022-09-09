@@ -20,7 +20,6 @@ pub struct CustomerOrder {
     pub additional: f64,
     pub delivery_fee: f64,
     pub discount: f64,
-    pub total_price: f64,
     pub status: i16,
 }
 
@@ -35,7 +34,6 @@ pub struct NewCustomerOrder {
     pub additional: f64,
     pub delivery_fee: f64,
     pub discount: f64,
-    pub total_price: f64,
     pub status: i16,
 }
 

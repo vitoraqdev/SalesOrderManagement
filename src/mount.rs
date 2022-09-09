@@ -17,6 +17,6 @@ pub fn rocket() -> _ {
             get_item, create_item, get_all_items, update_item, delete_item,
             get_motoboy, create_motoboy, get_motoboys, update_motoboy, delete_motoboy,
             get_neighborhood, create_neighborhood,
-            get_order_details_wrapper, create_order_details,
+            get_order_details, create_order_details, get_all_order_details, update_order_details, delete_order_details
         ])
 }

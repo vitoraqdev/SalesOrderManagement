@@ -48,6 +48,13 @@ pub fn _get_item(conn: &mut PgConnection, item_id: i32) -> Option<Item> {
         .unwrap()
 }
 
+pub fn _get_item_price(conn: &mut PgConnection, item_id: i32) -> QueryResult<f64> {
+    item::table
+        .find(item_id)
+        .select(item::price)
+        .first::<f64>(conn)
+}
+
 #[get("/item")]
 pub fn get_all_items() -> Result<Json<Vec<Item>>, status::NotFound<String>> {
     let mut conn = PgConnection::establish(DATABASE_URL)
