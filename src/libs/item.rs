@@ -17,7 +17,7 @@ pub struct Item {
 }
 
 
-#[derive(Debug, Insertable, FromForm)]
+#[derive(Debug, AsChangeset, Insertable, FromForm)]
 #[diesel(table_name = item)]
 pub struct NewItem {
     pub name: String,
@@ -79,6 +79,22 @@ pub fn create_item(item: Form<NewItem>) -> String {
         .expect("Error creating item");
 
     format!("{:?}", item)
+}
+
+#[put("/item/<item_id>", data = "<item>")]
+pub fn update_item(item_id: i32, item: Form<NewItem>) -> String {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let item = _update_item(&mut conn, item_id, item.into_inner());
+
+    format!("{:?}", item)
+}
+
+fn _update_item(conn: &mut PgConnection, item_id: i32, item: NewItem) -> QueryResult<Item> {
+    diesel::update(item::table.find(item_id))
+        .set(item)
+        .get_result::<Item>(conn)
 }
 
 #[delete("/item/<item_id>")]
