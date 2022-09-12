@@ -1,9 +1,11 @@
 use super::super::schema::neighborhood;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
+use rocket::http::Status;
 use crate::DATABASE_URL;
 use serde::Serialize;
 use rocket::serde::json::Json;
+use diesel::result::Error;
 
 #[derive(Debug, Queryable, Serialize)]
 pub struct Neighborhood {
@@ -13,7 +15,7 @@ pub struct Neighborhood {
 }
 
 
-#[derive(Debug, Insertable, FromForm)]
+#[derive(Debug, AsChangeset, Insertable, FromForm)]
 #[diesel(table_name = neighborhood)]
 pub struct NewNeighborhood {
     pub name: String,
@@ -67,4 +69,28 @@ pub fn _get_neighborhoods(conn: &mut PgConnection) -> Vec<Neighborhood> {
     neighborhood::table
         .load::<Neighborhood>(conn)
         .expect("Error loading neighborhoods")
+}
+
+#[put("/address/neighborhood/<neighborhood_id>", data = "<neighborhood>")]
+pub fn update_neighborhood(neighborhood_id: i32, neighborhood: Form<NewNeighborhood>) -> Result<Json<Neighborhood>, (Status, String)> {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let updated_neighborhood = _update_neighborhood(&mut conn, neighborhood_id, neighborhood.into_inner());
+
+    match updated_neighborhood {
+        Ok(updated_neighborhood) => Ok(Json(updated_neighborhood)),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Neighborhood not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal Server Error".to_string())),
+        }
+    }
+}
+
+pub fn _update_neighborhood(conn: &mut PgConnection, neighborhood_id: i32, neighborhood: NewNeighborhood) -> QueryResult<Neighborhood> {
+    diesel::update(neighborhood::table)
+        .filter(neighborhood::id.eq(neighborhood_id))
+        .set(neighborhood)
+        .get_result::<Neighborhood>(conn)
 }
