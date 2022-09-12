@@ -29,24 +29,26 @@ pub struct NewOrderDetails {
 }
 
 #[get("/order_details/<order_id>")]
-pub fn get_order_details(order_id: i32) -> String {
+pub fn get_order_details(order_id: i32) -> Result<Json<Vec<OrderDetails>>, (Status, String)> {
     let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
     let order_details = _get_order_details(&mut conn, order_id);
 
     match order_details {
-        Some(order_details) => format!("{:?}", order_details),
-        None => "Order id not found".to_string(),
+        Ok(order_details) => Ok(Json(order_details)),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Order details not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal server error".to_string())),
+        }
     }
 }
 
-pub fn _get_order_details(conn: &mut PgConnection, order_id: i32) -> Option<OrderDetails> {
+pub fn _get_order_details(conn: &mut PgConnection, order_id: i32) -> QueryResult<Vec<OrderDetails>> {
     order_details::table
         .filter(order_details::order_id.eq(order_id))
-        .first::<OrderDetails>(conn)
-        .optional()
-        .unwrap()
+        .load::<OrderDetails>(conn)
 }
 
 #[post("/order_details", data = "<order_details>")]
