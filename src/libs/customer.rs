@@ -1,6 +1,8 @@
 use crate::schema::customer;
 use diesel::prelude::*;
+use diesel::result::Error;
 use rocket::form::{Form, FromForm};
+use rocket::http::Status;
 use crate::DATABASE_URL;
 use serde::Serialize;
 use rocket::serde::json::Json;
@@ -15,7 +17,7 @@ pub struct Customer {
 }
 
 
-#[derive(Insertable, FromForm)]
+#[derive(Insertable, AsChangeset, FromForm)]
 #[diesel(table_name = customer)]
 pub struct NewCustomer {
     pub name: String,
@@ -74,4 +76,27 @@ pub fn _get_customers(conn: &mut PgConnection) -> Vec<Customer> {
     customer::table
         .load::<Customer>(conn)
         .unwrap()
+}
+
+#[put("/customer/<customer_id>", data = "<customer>")]
+pub fn update_customer(customer_id: i32, customer: Form<NewCustomer>) -> Result<Json<Customer>, (Status, String)> {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let customer = _update_customer(&mut conn, customer_id, customer.into_inner());
+
+    match customer {
+        Ok(customer) => Ok(Json(customer)),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Customer not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal Server Error".to_string())),
+        }
+    }
+}
+
+pub fn _update_customer(conn: &mut PgConnection, customer_id: i32, customer: NewCustomer) -> QueryResult<Customer> {
+    diesel::update(customer::table.find(customer_id))
+        .set(customer)
+        .get_result::<Customer>(conn)
 }
