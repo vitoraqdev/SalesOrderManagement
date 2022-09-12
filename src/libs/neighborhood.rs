@@ -94,3 +94,26 @@ pub fn _update_neighborhood(conn: &mut PgConnection, neighborhood_id: i32, neigh
         .set(neighborhood)
         .get_result::<Neighborhood>(conn)
 }
+
+#[delete("/address/neighborhood/<neighborhood_id>")]
+pub fn delete_neighborhood(neighborhood_id: i32) -> Result<Status, (Status, String)> {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let deleted_neighborhood = _delete_neighborhood(&mut conn, neighborhood_id);
+
+    match deleted_neighborhood {
+        Ok(_) => Ok(Status::Ok),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Neighborhood not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal Server Error".to_string())),
+        }
+    }
+}
+
+pub fn _delete_neighborhood(conn: &mut PgConnection, neighborhood_id: i32) -> QueryResult<usize> {
+    diesel::delete(neighborhood::table)
+        .filter(neighborhood::id.eq(neighborhood_id))
+        .execute(conn)
+}
