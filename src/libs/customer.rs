@@ -2,9 +2,11 @@ use crate::schema::customer;
 use diesel::prelude::*;
 use rocket::form::{Form, FromForm};
 use crate::DATABASE_URL;
+use serde::Serialize;
+use rocket::serde::json::Json;
 
 
-#[derive(Debug, Queryable)]
+#[derive(Debug, Queryable, Serialize)]
 pub struct Customer {
     pub id: i32,
     pub name: String,
@@ -56,4 +58,20 @@ pub fn create_customer(customer: Form<NewCustomer>) -> String {
         Ok(customer) => format!("{:?}", customer),
         Err(e) => format!("Error creating customer: {}", e),
     }
+}
+
+#[get("/customer")]
+pub fn get_customers() -> Json<Vec<Customer>> {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let customers = _get_customers(&mut conn);
+
+    Json(customers)
+}
+
+pub fn _get_customers(conn: &mut PgConnection) -> Vec<Customer> {
+    customer::table
+        .load::<Customer>(conn)
+        .unwrap()
 }
