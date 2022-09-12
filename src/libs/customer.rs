@@ -27,24 +27,26 @@ pub struct NewCustomer {
 
 
 #[get("/customer/<customer_id>")]
-pub fn get_customer_wrapper(customer_id: i32) -> String {
+pub fn get_customer(customer_id: i32) -> Result<Json<Customer>, (Status, String)> {
     let mut conn = PgConnection::establish(DATABASE_URL)
         .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
 
-    let customer = get_customer(&mut conn, customer_id);
+    let customer = _get_customer(&mut conn, customer_id);
 
     match customer {
-        Some(customer) => format!("{:?}", customer),
-        None => "Customer not found".to_string(),
+        Ok(customer) => Ok(Json(customer)),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Customer not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal server error".to_string())),
+        }
     }
 }
 
-fn get_customer(conn: &mut PgConnection, customer_id: i32) -> Option<Customer> {
+pub fn _get_customer(conn: &mut PgConnection, customer_id: i32) -> QueryResult<Customer> {
     customer::table
         .find(customer_id)
         .first::<Customer>(conn)
-        .optional()
-        .unwrap()
 }
 
 #[post("/customer", data = "<customer>")]
