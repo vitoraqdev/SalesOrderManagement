@@ -100,3 +100,25 @@ pub fn _update_customer(conn: &mut PgConnection, customer_id: i32, customer: New
         .set(customer)
         .get_result::<Customer>(conn)
 }
+
+#[delete("/customer/<customer_id>")]
+pub fn delete_customer(customer_id: i32) -> Result<Status, (Status, String)> {
+    let mut conn = PgConnection::establish(DATABASE_URL)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", DATABASE_URL));
+
+    let customer = _delete_customer(&mut conn, customer_id);
+
+    match customer {
+        Ok(_) => Ok(Status::Ok),
+        Err(err) => match err {
+            Error::NotFound => Err((Status::NotFound, "Customer not found".to_string())),
+            Error::DatabaseError(_, info) => Err((Status::InternalServerError, info.message().to_string())),
+            _ => Err((Status::InternalServerError, "Internal Server Error".to_string())),
+        }
+    }
+}
+
+pub fn _delete_customer(conn: &mut PgConnection, customer_id: i32) -> QueryResult<usize> {
+    diesel::delete(customer::table.find(customer_id))
+        .execute(conn)
+}
